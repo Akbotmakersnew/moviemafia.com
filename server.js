@@ -1,15 +1,30 @@
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 
 // Connect to the database
-mongoose.connect('mongodb://localhost:27017/login-system', { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect('mongodb://localhost:27017/login-system', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 
 // Define the user schema
 const userSchema = new mongoose.Schema({
-    username: String,
-    email: String,
-    password: String,
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  password: {
+    type: String,
+    required: true,
+  },
 });
 
 // Create a model for the user schema
@@ -19,45 +34,71 @@ app.use(express.json());
 
 // Handle login requests
 app.post('/login', async (req, res) => {
+  try {
     const { username, password } = req.body;
 
     // Find the user in the database
     const user = await User.findOne({ username });
 
     if (!user) {
-        return res.json({ success: false, message: 'Invalid username or password' });
+      return res.json({
+        success: false,
+        message: 'Invalid username or password',
+      });
     }
 
     // Check if the password is correct
-    if (password !== user.password) {
-        return res.json({ success: false, message: 'Invalid username or password' });
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordCorrect) {
+      return res.json({
+        success: false,
+        message: 'Invalid username or password',
+      });
     }
 
     // Return a success response
     res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.json({ success: false, message: 'Internal server error' });
+  }
 });
 
 // Handle sign-up requests
 app.post('/signup', async (req, res) => {
+  try {
     const { username, email, password } = req.body;
 
     // Check if the username or email is already taken
-    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+    const existingUser = await User.findOne({
+      $or: [{ username }, { email }],
+    });
 
     if (existingUser) {
-        return res.json({ success: false, message: 'Username or email is already taken' });
+      return res.json({
+        success: false,
+        message: 'Username or email is already taken',
+      });
     }
 
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     // Create a new user
-    const user = new User({ username, email, password });
+    const user = new User({ username, email, password: hashedPassword });
 
     // Save the user to the database
     await user.save();
 
     // Return a success response
     res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.json({ success: false, message: 'Internal server error' });
+  }
 });
 
 app.listen(3000, () => {
-    console.log('Server listening on port 3000');
+  console.log('Server listening on port 3000');
 });
