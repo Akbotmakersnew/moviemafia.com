@@ -100,13 +100,4 @@ app.post('/signup', async (req, res) => {
     await user.save();
 
     // Return a success response
-    res.json({ success: true });
-  } catch (error) {
-    console.error(error);
-    res.json({ success: false, message: 'Internal server error' });
-  }
-});
-
-app.listen(3000, () => {
-  console.log('Server listening on port 3000');
-});
+    res.json({ success: true
