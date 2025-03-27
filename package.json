@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "express": "^4.17.1",
+    "mongoose": "^5.12.3",
+    "bcrypt": "^5.0.1",
+    "joi": "^17.4.2"
+  }
+}
